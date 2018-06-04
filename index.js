@@ -87,6 +87,11 @@ const Twilio = {
             TwilioVoice.requestPermissions(senderId)
         }
     },
+    requestPermissions2(senderId) {
+        if (Platform.OS === ANDROID) {
+            TwilioVoice.requestPermissions2()
+        }
+    },
     getActiveCall() {
         return TwilioVoice.getActiveCall()
     },

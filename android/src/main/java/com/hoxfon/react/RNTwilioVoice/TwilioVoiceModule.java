@@ -150,9 +150,9 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         /*
          * Ensure the microphone permission is enabled
          */
-        if (shouldAskForMicPermission && !checkPermissionForMicrophone()) {
-            requestPermissionForMicrophone();
-        }
+        // if (shouldAskForMicPermission && !checkPermissionForMicrophone()) {
+        //     requestPermissionForMicrophone();
+        // }
     }
 
     @Override
@@ -745,6 +745,13 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
             }
         } else {
             audioManager.abandonAudioFocus(null);
+        }
+    }
+
+    @ReactMethod
+    public void requestPermissions2() {
+        if (!checkPermissionForMicrophone()) {
+            requestPermissionForMicrophone();
         }
     }
 
