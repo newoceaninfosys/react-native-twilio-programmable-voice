@@ -283,6 +283,8 @@ RCT_REMAP_METHOD(getActiveCall,
     return;
   }
 
+  NSString *from = [callInvite.from stringByReplacingOccurrencesOfString:@"client:" withString:@""];
+
   self.callInvite = callInvite;
 
   [self reportIncomingCallFrom:callInvite.from withUUID:callInvite.uuid];
