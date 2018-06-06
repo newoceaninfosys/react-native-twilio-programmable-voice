@@ -1,6 +1,6 @@
 {
   "name": "@nois/react-native-twilio-programmable-voice",
-  "version": "3.22.0",
+  "version": "3.22.1",
   "description": "React Native wrapper for Twilio Programmable Voice SDK",
   "main": "index.js",
   "scripts": {
@@ -33,6 +33,6 @@
       "packageInstance": "new TwilioVoicePackage()"
     }
   },
-  "author": "Fabrizio Moscon",
+  "author": { "name": "Fabrizio Moscon" },
   "license": "MIT"
 }
