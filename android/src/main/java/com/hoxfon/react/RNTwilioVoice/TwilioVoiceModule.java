@@ -44,6 +44,7 @@ import com.twilio.voice.CallInvite;
 import com.twilio.voice.LogLevel;
 import com.twilio.voice.RegistrationException;
 import com.twilio.voice.RegistrationListener;
+import com.twilio.voice.UnregistrationListener;
 import com.twilio.voice.Voice;
 
 import java.util.HashMap;
@@ -103,6 +104,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
     static Map<String, Integer> callNotificationMap;
 
     private RegistrationListener registrationListener = registrationListener();
+    private UnregistrationListener unregistrationListener = unregistrationListener();
     private Call.Listener callListener = callListener();
 
     private CallInvite activeCallInvite;
@@ -206,6 +208,22 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
                 WritableMap params = Arguments.createMap();
                 params.putString("err", error.getMessage());
                 eventManager.sendEvent(EVENT_DEVICE_NOT_READY, params);
+            }
+        };
+    }
+
+    private UnregistrationListener unregistrationListener() {
+        return new UnregistrationListener() {
+            @Override
+            public void onUnregistered(String accessToken, String fcmToken) {
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "Successfully unregistered FCM");
+                }
+            }
+
+            @Override
+            public void onError(RegistrationException error, String accessToken, String fcmToken) {
+                Log.e(TAG, String.format("UnRegistration Error: %d, %s", error.getErrorCode(), error.getMessage()));
             }
         };
     }
@@ -322,12 +340,19 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         }
     }
 
-//    private void unregisterReceiver() {
-//        if (isReceiverRegistered) {
-//            LocalBroadcastManager.getInstance(getReactApplicationContext()).unregisterReceiver(voiceBroadcastReceiver);
-//            isReceiverRegistered = false;
-//        }
-//    }
+    private void unregisterReceiver() {
+        if (isReceiverRegistered) {
+            LocalBroadcastManager.getInstance(getReactApplicationContext()).unregisterReceiver(voiceBroadcastReceiver);
+            final String fcmToken = FirebaseInstanceId.getInstance().getToken();
+            if (fcmToken != null) {
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "UnRegistering with FCM");
+                }
+                Voice.unregister(getReactApplicationContext(), accessToken, Voice.RegistrationChannel.FCM, fcmToken, unregistrationListener);
+            }
+            isReceiverRegistered = false;
+        }
+    }
 
     private void registerActionReceiver() {
 
@@ -336,6 +361,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         intentFilter.addAction(ACTION_REJECT_CALL);
         intentFilter.addAction(ACTION_HANGUP_CALL);
         intentFilter.addAction(ACTION_CLEAR_MISSED_CALLS_COUNT);
+        intentFilter.addAction(ACTION_MISSED_CALL);
 
         getReactApplicationContext().registerReceiver(new BroadcastReceiver() {
             @Override
@@ -471,17 +497,20 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+
             if (action.equals(ACTION_INCOMING_CALL)) {
                 if (BuildConfig.DEBUG) {
                     Log.d(TAG, "VoiceBroadcastReceiver.onReceive ACTION_INCOMING_CALL. Intent "+ intent.getExtras());
                 }
                 handleIncomingCallIntent(intent);
-            } else if (action.equals(ACTION_MISSED_CALL)) {
-                SharedPreferences sharedPref = getReactApplicationContext().getSharedPreferences(PREFERENCE_KEY, Context.MODE_PRIVATE);
-                SharedPreferences.Editor sharedPrefEditor = sharedPref.edit();
-                sharedPrefEditor.remove(MISSED_CALLS_GROUP);
-                sharedPrefEditor.commit();
-            } else {
+            }
+            else if(action.equals(ACTION_MISSED_CALL)){
+                SharedPreferences sharedPref2 = getReactApplicationContext().getSharedPreferences(PREFERENCE_KEY, Context.MODE_PRIVATE);
+                SharedPreferences.Editor sharedPrefEditor2 = sharedPref2.edit();
+                sharedPrefEditor2.remove(MISSED_CALLS_GROUP);
+                sharedPrefEditor2.commit();
+            }
+            else {
                 Log.e(TAG, "received broadcast unhandled action " + action);
             }
         }
@@ -753,6 +782,11 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         if (!checkPermissionForMicrophone()) {
             requestPermissionForMicrophone();
         }
+    }
+
+    @ReactMethod
+    public void unregister() {
+        unregisterReceiver();
     }
 
     private boolean checkPermissionForMicrophone() {
