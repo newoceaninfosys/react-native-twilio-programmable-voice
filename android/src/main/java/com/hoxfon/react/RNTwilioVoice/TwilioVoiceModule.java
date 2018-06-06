@@ -344,7 +344,7 @@ public class TwilioVoiceModule extends ReactContextBaseJavaModule implements Act
         if (isReceiverRegistered) {
             LocalBroadcastManager.getInstance(getReactApplicationContext()).unregisterReceiver(voiceBroadcastReceiver);
             final String fcmToken = FirebaseInstanceId.getInstance().getToken();
-            if (fcmToken != null) {
+            if (fcmToken != null && accessToken != null) {
                 if (BuildConfig.DEBUG) {
                     Log.d(TAG, "UnRegistering with FCM");
                 }
